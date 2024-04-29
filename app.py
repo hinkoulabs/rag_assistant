@@ -5,27 +5,17 @@ import whisper
 import sounddevice as sd
 from queue import Queue
 from rich.console import Console
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
-from langchain.prompts import PromptTemplate
-from langchain_community.llms import Ollama
 import logging
 from datetime import datetime
 from config import load_config
+from llm import LllService
 
 console = Console()
 model = whisper.load_model("base")
 config = load_config()
 
-template_text = config["template"]
+llm_service = LllService(config, verbose=True)
 filename_pattern = config["filename_pattern"]
-
-PROMPT = PromptTemplate(input_variables=["history", "input"], template=template_text)
-chain = ConversationChain(
-    prompt=PROMPT,
-    memory=ConversationBufferMemory(ai_prefix="Assistant:"),
-    llm=Ollama(),
-)
 
 def setup_logging():
     """Sets up the logging configuration to log to both the console and a file."""
@@ -72,13 +62,6 @@ def transcribe_channel(audio_data, channel=None):
 
     return " ".join(full_transcript)
 
-def get_llm_response(text: str) -> str:
-    """Generates a response to the given text using the Llama-2 language model."""
-    response = chain.predict(input=text)
-    if response.startswith("Assistant:"):
-        response = response[len("Assistant:") :].strip()
-    return response
-
 def main():
     setup_logging()
 
@@ -111,7 +94,7 @@ def main():
                 console.print(f"[red]Speaker:\n[cyan]{text}")
 
                 with console.status("Generating response...", spinner="earth"):
-                    response = get_llm_response(dialogue)
+                    response = llm_service.get_response(dialogue)
                 logging.info(f"Assistant:\n{response}")
                 console.print(f"[red]Assistant:\n[yellow]{response}")
             else:

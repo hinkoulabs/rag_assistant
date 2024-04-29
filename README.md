@@ -34,8 +34,6 @@ python3 -m venv venv
 source venv/bin/activate
 
 poetry install
-
-python3 -m pip install -r requirements.txt
 ```
 
 2. **Configuration:**
