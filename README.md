@@ -36,42 +36,99 @@ source venv/bin/activate
 poetry install
 ```
 
-2. **Configuration:**
+2. **Create multi-output devise to stream call into the program:**
 
-- Create a config.yaml file in the project's root directory, including the following content:
+- Donwload and install blackhole from `https://github.com/ExistentialAudio/BlackHole`
+- Use utility "Audio MIDI Setup" to add multi-output devise with blackhole and other audio outputs (MacOS only)
+- Activate the multi-output devise to use the one as default speaker
 
-```yaml
-template: |
-  You are a helpful and friendly AI assistant to pass interview. You are polite, respectful, and aim to provide concise responses of less than 30 words.
+3. **Install ollama:**
 
-  The conversation transcript is as follows:
-  {history}
+- Donwload and intasll ollama from `https://ollama.com/` (Docker version of ollama works slowly that's why I recomend to use the one directly on laptop)
+- Pull model `llama2:13b`
 
-  And here is the user's follow-up: {input}
-
-  Your response:
-
-filename_pattern: "interviews/%Y_%m_%d_%H_%M_%S.txt"
+```bash
+ollama pull llama2:13b
 ```
 
-3. **Running assistant services:**
+4. **Running assistant services:**
 
-- Start vectore store and ollama:
+- Start vectore store for RAG:
 
 ```bash
 # run services
 docker-compose up --build
 ```
 
-4. **Running the Program:**
+5. **Configuration:**
+
+- Create a config.yaml file in the project's root directory, including the following content:
+
+```yaml
+# llm prompt
+template: |
+  You are a helpful and friendly AI assistant to pass interview.
+
+  Use the following pieces of context to answer the question at the end. 
+    If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+    Use three sentences maximum and keep the answer as concise as possible (provide concise responses of less than 30 words). 
+    Please use language of question to build the answer.
+    {context}
+  Question: {question}
+
+  Your response:
+
+filename_pattern: "interviews/%Y_%m_%d_%H_%M_%S.txt"
+
+# vector storage setings
+vectorstore:
+  url: "http://localhost:9200"
+  index_name: "interview-assistant-index"
+ 
+# llm settings
+llm:
+  model: "llama2:13b"  
+
+# RAG documents settings
+documents:
+  folder_path: "documents"
+  formats: ["pdf"]
+  worker_count: 4
+```
+
+6. **Create folders:**
+
+- Create folder to store interviews:
+
+```bash
+mkdir interviews
+```
+
+- Create folder to store RAG documents:
+
+```bash
+mkdir documents
+```
+
+- Add pdf documents to folder `documents`. The ones will be used to generate a context for llm answers.
+
+7. **Index documents**
+
+- Index documents from folder `documents` to vectore storage
+
+```bash
+python index_docs.py
+```
+
+8. **Running the Program:**
 
 - Start the assistant by executing the main script:
 
 ```bash
-python main.py
+python assistant.py
 ```
 
-5. **Generating Responses:**
+9. **Generating Responses:**
 
 - Press Enter to start recording audio, and press Enter again to stop.
 
@@ -88,13 +145,6 @@ The program can be extended to log information to a file named "interviews/YYYY_
 - **Templates:** Modify the conversation template in config.yaml to suit different interview styles or scenarios.
 
 - **Language Models:** Swap the Ollama model for other language models, adapting the assistant to specific contexts.
-
-## Helpers
-
-```bash
-# open terminal on ollama
-docker exec -it interview-assistant-ollama-1 bash
-```
 
 ## Contributing
 
