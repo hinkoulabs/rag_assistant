@@ -54,7 +54,16 @@ template: |
 filename_pattern: "interviews/%Y_%m_%d_%H_%M_%S.txt"
 ```
 
-3. **Running the Program:**
+3. **Running assistant services:**
+
+- Start vectore store and ollama:
+
+```bash
+# run services
+docker-compose up --build
+```
+
+4. **Running the Program:**
 
 - Start the assistant by executing the main script:
 
@@ -62,7 +71,7 @@ filename_pattern: "interviews/%Y_%m_%d_%H_%M_%S.txt"
 python main.py
 ```
 
-4. **Generating Responses:**
+5. **Generating Responses:**
 
 - Press Enter to start recording audio, and press Enter again to stop.
 
@@ -79,6 +88,13 @@ The program can be extended to log information to a file named "interviews/YYYY_
 - **Templates:** Modify the conversation template in config.yaml to suit different interview styles or scenarios.
 
 - **Language Models:** Swap the Ollama model for other language models, adapting the assistant to specific contexts.
+
+## Helpers
+
+```bash
+# open terminal on ollama
+docker exec -it interview-assistant-ollama-1 bash
+```
 
 ## Contributing
 

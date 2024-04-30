@@ -11,10 +11,10 @@ from config import load_config
 from llm import LllService
 
 console = Console()
-model = whisper.load_model("base")
+model = whisper.load_model("base.en")
 config = load_config()
 
-llm_service = LllService(config, verbose=True)
+llm_service = LllService(config, verbose=False)
 filename_pattern = config["filename_pattern"]
 
 def setup_logging():
@@ -36,7 +36,7 @@ def record_audio(device, stop_event, data_queue):
             console.print(status)
         data_queue.put(bytes(indata))
 
-    with sd.RawInputStream(samplerate=16000, device=device, channels=2, dtype='int16', callback=callback):
+    with sd.RawInputStream(samplerate=16000, device=device, dtype='int16', callback=callback):
         while not stop_event.is_set():
             time.sleep(0.1)
 
@@ -65,13 +65,13 @@ def transcribe_channel(audio_data, channel=None):
 def main():
     setup_logging()
 
-    console.print("Available audio devices:", sd.query_devices())
+    console.print("[cyan]Available audio devices:", sd.query_devices())
     device = int(console.input("Please select audio device: "))
     console.print("[cyan]Assistant started! Press Ctrl+C to exit.")
 
     try:
         while True:
-            console.input("Press Enter to start recording, then press Enter again to stop.")
+            console.input("[cyan]Press Enter to start recording, then press Enter again to stop.")
 
             data_queue = Queue()
             stop_event = threading.Event()
@@ -84,28 +84,48 @@ def main():
 
             audio_data = b"".join(list(data_queue.queue))
             if len(audio_data) > 0:
-                audio_np = np.frombuffer(audio_data, dtype=np.int16).reshape(-1, 2)
+                # Checking if mono or stereo
+                try:
+                    audio_np = np.frombuffer(audio_data, dtype=np.int16)
 
-                with console.status("Transcribing...", spinner="earth"):
-                    text = transcribe_channel(audio_np)
-                dialogue = f"Speaker: {text}"
+                    # Check if the data length is divisible by 2 to ensure it's stereo
+                    if len(audio_np) % 2 == 0:
+                        audio_np = audio_np.reshape(-1, 2)
+                    else:
+                        # If not, process it as mono
+                        console.print("[red]Data is not stereo, processing as mono \n")
+                        audio_np = audio_np.reshape(-1, 1)
 
-                logging.info(f"Speaker:\n{text}")
-                console.print(f"[red]Speaker:\n[cyan]{text}")
+                    with console.status("Transcribing...", spinner="earth"):
+                        text = transcribe_channel(audio_np)
 
-                with console.status("Generating response...", spinner="earth"):
-                    response = llm_service.get_response(dialogue)
-                logging.info(f"Assistant:\n{response}")
-                console.print(f"[red]Assistant:\n[yellow]{response}")
+                    if len(text) > 0:    
+                        question = f"Speaker: {text}"
+
+                        logging.info(f"Speaker:\n{text}")
+                        console.print(f"[red]Speaker:\n")
+                        console.print(text)
+
+                        console.print(f"[red]\nAssistant:\n")
+                        response = llm_service.get_response(question)
+                        console.print("\n")
+
+                        logging.info(f"Assistant:\n{response}")
+                    else:
+                        console.print(f"[red]Question is missing!\n")    
+                except Exception as e:
+                    logging.error(f"Audio processing error: {str(e)}")
+                    console.print(f"[red]Audio processing error: {str(e)}")
+
             else:
                 logging.error("No audio recorded. Please ensure your microphone is working.")
                 console.print("[red]No audio recorded. Please ensure your microphone is working.")
 
     except KeyboardInterrupt:
-        logging.info("Exiting...")
+        logging.info("[cyan]Exiting...")
         console.print("\n[red]Exiting...")
 
-    console.print("[blue]Session ended.")
+    console.print("[cyan]Session ended.")
 
 if __name__ == "__main__":
     main()

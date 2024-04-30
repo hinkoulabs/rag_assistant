@@ -161,4 +161,6 @@ cython_debug/
 #.idea/
 
 interviews/
+documents/
+data/
 config.yaml
