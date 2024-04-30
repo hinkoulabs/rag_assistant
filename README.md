@@ -83,7 +83,6 @@ filename_pattern: "interviews/%Y_%m_%d_%H_%M_%S.txt"
 # vector storage setings
 vectorstore:
   url: "http://localhost:9200"
-  index_name: "interview-assistant-index"
  
 # llm settings
 llm:
@@ -91,8 +90,13 @@ llm:
 
 # RAG documents settings
 documents:
-  folder_path: "documents"
-  formats: ["pdf"]
+  # collections are used to split scopes based on interview themes
+  collections:
+    collection1:
+      folder_path: "documents/collection1"
+    collection2:
+      folder_path: "documents/collection2"      
+  formats: ["pdf"]    
   worker_count: 4
 ```
 
@@ -104,13 +108,18 @@ documents:
 mkdir interviews
 ```
 
-- Create folder to store RAG documents:
+- Create folders to store RAG documents based on collections from config:
 
 ```bash
-mkdir documents
+# create a folder to store docs for collection "collection1"
+mkdir documents/collection1
+
+# create a folder to store docs for collection "collection2"
+mkdir documents/collection2
 ```
 
-- Add pdf documents to folder `documents`. The ones will be used to generate a context for llm answers.
+- Add pdf documents related to `collection1` to folder `documents/collection1`. The ones will be used to generate a context for llm answers.
+- Add pdf documents related to `collection2` to folder `documents/collection2`. The ones will be used to generate a context for llm answers.
 
 7. **Index documents**
 

@@ -7,7 +7,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from vectorstore import VectorStore
 
 class LllService:
-    def __init__(self, config: dict,  verbose: bool=False) -> None:
+    def __init__(self, config: dict, collection_name: str, verbose: bool=False) -> None:
       template = config["template"]
       
       self.prompt = PromptTemplate(
@@ -17,7 +17,7 @@ class LllService:
 
       llm = Ollama(model=config["llm"]["model"], callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]))   
 
-      vectorstore = VectorStore(config);
+      vectorstore = VectorStore(config, collection_name)
       
       self.chain = RetrievalQA.from_chain_type(
             llm,

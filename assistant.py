@@ -9,12 +9,12 @@ import logging
 from datetime import datetime
 from config import load_config
 from llm import LllService
+from document_collections import input_collection
 
 console = Console()
 model = whisper.load_model("base.en")
 config = load_config()
 
-llm_service = LllService(config, verbose=False)
 filename_pattern = config["filename_pattern"]
 
 def setup_logging():
@@ -67,6 +67,10 @@ def main():
 
     console.print("[cyan]Available audio devices:", sd.query_devices())
     device = int(console.input("Please select audio device: "))
+    collection_name = input_collection(config, console)
+
+    llm_service = LllService(config, collection_name, verbose=True)
+
     console.print("[cyan]Assistant started! Press Ctrl+C to exit.")
 
     try:
