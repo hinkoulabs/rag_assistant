@@ -1,25 +1,16 @@
 from langchain_elasticsearch import ElasticsearchStore
 from langchain_community.embeddings import GPT4AllEmbeddings
-from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import PDFMinerLoader
 import sys
 import os
 from multiprocessing import Pool
 from glob import glob
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+from rich.console import Console
 
+# Global variables for embedding and console output
 embedding = GPT4AllEmbeddings()
-
-class SuppressStdout:
-    def __enter__(self):
-        self._original_stdout = sys.stdout
-        self._original_stderr = sys.stderr
-        sys.stdout = open(os.devnull, 'w')
-        sys.stderr = open(os.devnull, 'w')
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sys.stdout.close()
-        sys.stdout = self._original_stdout
-        sys.stderr = self._original_stderr
+console = Console()
 
 class VectorStore:
     def __init__(self, config) -> None:
@@ -38,46 +29,48 @@ class VectorStore:
         # Get list of files from the specified folder
         document_path = self.documents_config["folder_path"]
         document_formats = self.documents_config.get("formats", ["pdf"])
-        
+
         # Collect files with the specified formats
         document_files = []
-        for format in document_formats:
-            document_files.extend(glob(f"{document_path}/*.{format}"))
+        for fmt in document_formats:
+            document_files.extend(glob(f"{document_path}/*.{fmt}"))
 
         if not document_files:
-            print("No documents found to index.")
+            console.print("No documents found to index.")
             return
 
-        # Prepare for multiprocessing with progress tracking
         worker_count = self.documents_config.get("worker_count", 4)
-        
+
+        # Progress tracking
         with Progress(
             TextColumn("[progress.description]{task.description}"), 
             BarColumn(), 
             TextColumn("[progress.percentage]{task.percentage:>3.0f}%"), 
-            TimeElapsedColumn(), 
+            TimeElapsedColumn(),
             expand=True,
         ) as progress:
 
             task = progress.add_task("Processing files", total=len(document_files))
 
-            # Handling progress updates separately
+            # Process documents concurrently with progress updates
             with Pool(worker_count) as pool:
-                pool.starmap(process_file, [(file, self.vectorstore_config) for file in document_files])
+                # Map document processing and track progress
+                for document in pool.imap_unordered(process_file, [(file, self.vectorstore_config) for file in document_files]):
+                    console.print(f"Document processed: {document}")
+                    progress.update(task, advance=1)
 
-            # Manually advancing progress bar after processing
-            for _ in range(len(document_files)):
-                progress.update(task, advance=1)
-
-def process_file(document_path: str, vectorstore_config: dict) -> None:
+def process_file(args):
     """Standalone function to handle document processing and indexing."""
-    loader = PyPDFLoader(document_path)
-    documents = loader.load()
+    document_path, vectorstore_config = args
+    # console.print(f"Processing document: {document_path}")
+
+    loader = PDFMinerLoader(document_path)
+    documents = loader.load_and_split()
 
     valid_documents = [doc for doc in documents if doc.page_content]  # Filtering out empty content
 
     if not valid_documents:
-        print(f"No valid content found in document: {document_path}")
+        console.print(f"No valid content found in document: {document_path}")
         return
 
     with SuppressStdout():
@@ -89,3 +82,17 @@ def process_file(document_path: str, vectorstore_config: dict) -> None:
         )
 
         db.client.indices.refresh(index=vectorstore_config["index_name"])
+
+    return document_path
+
+class SuppressStdout:
+    def __enter__(self):
+        self._original_stdout = sys.stdout
+        self._original_stderr = sys.stderr
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sys.stdout.close()
+        sys.stdout = self._original_stdout
+        sys.stderr = self._original_stdout
