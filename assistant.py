@@ -69,7 +69,7 @@ def main():
     device = int(console.input("Please select audio device: "))
     collection_name = input_collection(config, console)
 
-    llm_service = LllService(config, collection_name, verbose=True)
+    llm_service = LllService(config, collection_name, verbose=False)
 
     console.print("[cyan]Assistant started! Press Ctrl+C to exit.")
 
