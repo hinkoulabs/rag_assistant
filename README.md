@@ -1,6 +1,6 @@
 # RAG Assistant
 
-RAG Assistant is an AI-powered tool designed to answer questions based on specific contexts (e.g., PDF files) and input types (text or audio). It offers functionalities such as audio transcription, conversation management, and response generation using a predefined template. The assistant also supports comprehensive logging to both the console and files, facilitating review and refinement of question responses.
+RAG Assistant is an AI-powered console tool designed to answer questions based on specific contexts (e.g., PDF files) and input types (text or audio). It offers functionalities such as audio transcription, conversation management, and response generation using a predefined template. The assistant also supports comprehensive logging to both the console and files, facilitating review and refinement of question responses.
 
 The primary purpose of this project is to test RAG integration and enable the use of AI for sensitive data without exposing it to public platforms.
 
