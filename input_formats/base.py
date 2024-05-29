@@ -2,7 +2,7 @@ class Base:
     def __init__(self, console):
         self.console = console
         self.messages = {
-            "loop_start": "[cyan]Please enter your question: Press Ctrl+C to exit.\n",
+            "loop_start": "\n[cyan]Please enter your question: Press Ctrl+C to exit.\n",
             "exiting": "\n[red]Exiting...",
             "session_ended": "[cyan]Session ended."
         }
