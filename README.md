@@ -63,7 +63,7 @@ poetry install
 
 ### 2. Install Ollama
 
--Donwload and install ollama from `https://ollama.com/` (Docker version of ollama works slowly that's why I recomend to use the one directly on laptop)
+Donwload and install [Ollama](https://ollama.com/) (Docker version of ollama works slowly that's why I recomend to use the one directly on laptop)
 
 Pull model `llama2:13b`
 
@@ -143,7 +143,7 @@ python index_docs.py
 
 If using the assistant during calls (e.g., Google Meet, Zoom, Slack), add a multi-output device to stream input audio into the assistant.
 
-Donwload and install blackhole from `https://github.com/ExistentialAudio/BlackHole`.
+Donwload and install [Blackhole](https://github.com/ExistentialAudio/BlackHole).
 
 Use "Audio MIDI Setup" to add a multi-output device with BlackHole and other audio outputs (MacOS only).
 
