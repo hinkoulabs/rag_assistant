@@ -3,11 +3,10 @@ from langchain.prompts import PromptTemplate
 from langchain_community.llms import Ollama
 from langchain.callbacks.manager import CallbackManager
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
-from langchain.callbacks.base import BaseCallbackHandler
 from vectorstore import VectorStore
 
 class LllService:
-    def __init__(self, config: dict, collection_name: str, verbose: bool=False) -> None:
+    def __init__(self, config: dict, context: str, verbose: bool=False) -> None:
       template = config["template"]
       
       self.prompt = PromptTemplate(
@@ -17,7 +16,7 @@ class LllService:
 
       llm = Ollama(model=config["llm"]["model"], callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]))   
 
-      vectorstore = VectorStore(config, collection_name)
+      vectorstore = VectorStore(config, context)
       
       self.chain = RetrievalQA.from_chain_type(
             llm,
@@ -27,7 +26,7 @@ class LllService:
 
 
     def get_response(self, query: str) -> str:
-        """Generates a response to the given text using the Llama-2 language model."""
+        """Generates a response to the given text using the Llama language model."""
 
         response = self.chain.invoke({"query": query})
 

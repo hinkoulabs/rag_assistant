@@ -5,7 +5,7 @@ import sys
 import os
 from multiprocessing import Pool
 from glob import glob
-from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn, TimeRemainingColumn
+from rich.progress import Progress, BarColumn, TextColumn, TimeElapsedColumn
 from rich.console import Console
 
 # Global variables for embedding and console output
@@ -13,22 +13,22 @@ embedding = GPT4AllEmbeddings()
 console = Console()
 
 class VectorStore:
-    def __init__(self, config: dict, collection_name: str) -> None:
+    def __init__(self, config: dict, context: str) -> None:
         self.config = config
         self.vectorstore_config = config["vectorstore"]
-        self.documents_config = config["documents"]
-        self.collection_name = collection_name
+        self.documents_config = config["contexts"]
+        self.context = context
 
     def as_retriever(self):
         return ElasticsearchStore(
             es_url=self.vectorstore_config["url"],
-            index_name=self.collection_name,
+            index_name=self.context,
             embedding=embedding
         ).as_retriever()
 
     def add_documents(self) -> None:
         # Get list of files from the specified folder
-        document_path = self.documents_config["collections"][self.collection_name]["folder_path"]
+        document_path = self.documents_config["data"][self.context]["folder_path"]
         document_formats = self.documents_config.get("formats", ["pdf"])
 
         # Collect files with the specified formats
@@ -56,13 +56,13 @@ class VectorStore:
             # Process documents concurrently with progress updates
             with Pool(worker_count) as pool:
                 # Map document processing and track progress
-                for document in pool.imap_unordered(process_file, [(file, self.vectorstore_config, self.collection_name) for file in document_files]):
+                for document in pool.imap_unordered(process_file, [(file, self.vectorstore_config, self.context) for file in document_files]):
                     console.print(f"Document processed: {document}")
                     progress.update(task, advance=1)
 
 def process_file(args):
     """Standalone function to handle document processing and indexing."""
-    document_path, vectorstore_config, collection_name = args
+    document_path, vectorstore_config, context = args
     # console.print(f"Processing document: {document_path}")
 
     loader = PDFMinerLoader(document_path)
@@ -79,10 +79,10 @@ def process_file(args):
             valid_documents, 
             embedding, 
             es_url=vectorstore_config["url"],
-            index_name=collection_name
+            index_name=context
         )
 
-        db.client.indices.refresh(index=collection_name)
+        db.client.indices.refresh(index=context)
 
     return document_path
 
